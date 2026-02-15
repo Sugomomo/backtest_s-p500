@@ -1,4 +1,4 @@
-from utils import Alpha 
+from utils import EfficientAlpha as Alpha
 import pandas as pd
 import numpy as np 
 
@@ -28,20 +28,25 @@ class Alpha1(Alpha):
         temp_df = temp_df.replace(np.inf, 0).replace(-np.inf, 0) #replace inf to 0
         zscore = lambda x: (x - np.mean(x))/np.std(x) #zscore function
         cszcre_df = temp_df.ffill().apply(zscore, axis =1) 
+
+        alphas = []
         for inst in self.insts:
             self.dfs[inst]['alpha'] = cszcre_df[inst].rolling(12).mean() * -1
-            self.dfs[inst]['eligible'] = self.dfs[inst]['eligible'] & \
-                (~pd.isna(self.dfs[inst]['alpha'])) #alpha non-null
+            alphas.append(self.dfs[inst]['alpha'])
+        alphadf = pd.concat(alphas, axis =1)
+        alphadf.columns = self.insts
+        self.eligiblesdf = self.eligiblesdf & (~pd.isna(alphadf))
+        self.alphadf = alphadf
+        masked_df = self.alphadf/self.eligiblesdf 
+        masked_df = masked_df.replace([-np.inf, np.inf], np.nan)#set non trading to nan
+        num_eligibles = self.eligiblesdf.sum(axis=1) #num eligibles in universe
+        rankdf = masked_df.rank(axis=1, method="avergae", na_option="keep",ascending=True)
+        shortdf = rankdf.apply(lambda col: col <= num_eligibles.values/4 ,axis =0,raw=True) #if 10, short 1,2 
+        longdf = rankdf.apply(lambda col: col > np.ceil(num_eligibles-num_eligibles.values/4),axis =0,raw=True)#if 10, long 9, 10
+        forecast_df = -1*shortdf.astype(np.int32) + longdf.astype(np.int32)
+        self.forecast_df = forecast_df
         return 
 
     def compute_signal_distribution(self, eligibles, date): #this child will run instead of parent class 
-        alpha_scores = {} #forecast for every inst in our universe
-        for inst in eligibles:
-            alpha_scores[inst] = self.dfs[inst].at[date, 'alpha'] 
-        alpha_scores = {k:v for k,v in sorted(alpha_scores.items(), key=lambda pair: pair[1])}
-        alpha_long = list(alpha_scores.keys())[-int(len(eligibles)/4):]
-        alpha_short = list(alpha_scores.keys())[:int(len(eligibles)/4)]
-        forecasts = {}
-        for inst in eligibles:
-            forecasts[inst] = 1 if inst in alpha_long else (-1 if inst in alpha_short else 0) #1(long), -1(short), 0(no trade)
-        return forecasts, np.sum(np.abs(list(forecasts.values()))) #forecast_chips
+        forecasts = self.forecast_df.loc[date].values 
+        return forecasts, np.sum(np.abs(forecasts)) #forecast_chips
