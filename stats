@@ -3,11 +3,27 @@ before vectorization, 503 tickers, alpha1
 @timeme: run_simulation took 76.02699398994446 seconds
 13997.162695540372
 
+after vecotrization, 503 tickers, alpha1,2,3
+@timeme: run_simulation took 5.217932939529419 seconds
+13997.162695540372
+@timeme: run_simulation took 4.844282865524292 seconds
+8377.606224470346
+@timeme: run_simulation took 4.960123777389526 seconds
+42702.11217959524
+
 before vectorization, 200 tickers, alpha1,2,3
 @timeme: run_simulation took 29.2004611492157 seconds
 16042.507221192447
 @timeme: run_simulation took 31.06265115737915 seconds
 12082.024138006269
 @timeme: run_simulation took 30.710301160812378 seconds
+40813.95841306449
+
+after vecotrization, 200 tickers, alpha1,2,3
+@timeme: run_simulation took 2.343602180480957 seconds
+16042.507221192447
+@timeme: run_simulation took 2.1614718437194824 seconds
+12082.024138006269
+@timeme: run_simulation took 2.172659158706665 seconds
 40813.95841306449
 '''
