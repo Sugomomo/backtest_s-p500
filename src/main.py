@@ -15,6 +15,9 @@ from alpha3 import Alpha3
 import matplotlib.pyplot as plt
 from utils import Portfolio
 from utils import timeme
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 start = datetime(2010, 1, 1, tzinfo=pytz.utc) #standardized tz
 end = datetime.now(pytz.utc)
@@ -105,19 +108,19 @@ def get_tickers_dfs(start,end):
 
 def main():
     tickers, ticker_dfs = get_tickers_dfs(start=start, end=end)
-
-    testfor = 200
-    print(f'Testing {testfor} tickers of out  {len(tickers)} tickers')
-    tickers = tickers[:testfor]
+    # testfor = 200
+    # print(f'Testing {testfor} of out {len(tickers)} tickers')
+    # tickers = tickers[:testfor]
 
     alpha1 = Alpha1(insts=tickers, dfs=ticker_dfs,start=start,end=end)
     alpha2 = Alpha2(insts=tickers, dfs=ticker_dfs,start=start,end=end)
     alpha3 = Alpha3(insts=tickers, dfs=ticker_dfs,start=start,end=end)
     df1 = alpha1.run_simulation()
-    print(list(df1.capital)[-1])
     df2 = alpha2.run_simulation()
-    print(list(df2.capital)[-1])
     df3 = alpha3.run_simulation()
+
+    print(list(df1.capital)[-1])
+    print(list(df2.capital)[-1])
     print(list(df3.capital)[-1])
 
 if __name__ == "__main__":

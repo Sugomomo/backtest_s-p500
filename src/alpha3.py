@@ -10,6 +10,7 @@ class Alpha3(Alpha):
     def pre_compute(self,trade_range):
         for inst in self.insts:
             inst_df = self.dfs[inst]
+            # Alpha3: trend-composite signal from fast/medium/slow moving-average crossovers.
             fast = np.where(inst_df.close.rolling(10).mean() > inst_df.close.rolling(50).mean(), 1, 0) #pandas series of 1 if true else 0
             medium = np.where(inst_df.close.rolling(20).mean() > inst_df.close.rolling(100).mean(), 1, 0) #pandas series of 1 if true else 0
             slow = np.where(inst_df.close.rolling(50).mean() > inst_df.close.rolling(200).mean(), 1, 0) #pandas series of 1 if true else 0
@@ -18,14 +19,16 @@ class Alpha3(Alpha):
         return 
 
     def post_compute(self,trade_range):
+        temp = []
         for inst in self.insts:
-            self.dfs[inst]['alpha'] = self.dfs[inst]['alpha'].ffill()
-            self.dfs[inst]['eligible'] = self.dfs[inst]['eligible']\
-            & (~pd.isna(self.dfs[inst]['alpha'])) 
+            temp.append(self.dfs[inst]["alpha"])
+        alphadf = pd.concat(temp, axis=1)
+        alphadf.columns = self.insts
+        alphadf = alphadf.ffill()
+        self.eligiblesdf = self.eligiblesdf & (~pd.isna(alphadf))
+        self.alphadf = alphadf
         return 
 
     def compute_signal_distribution(self, eligibles, date):
-        forecasts = {}
-        for inst in eligibles:
-            forecasts[inst] = self.dfs[inst].at[date, 'alpha'] #alpha_score can be pos or neg
-        return forecasts, np.sum(np.abs(list(forecasts.values()))) #forecast_chips
+        # Return full cross-section vector aligned to self.insts.
+        return self.alphadf.loc[date]

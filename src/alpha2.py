@@ -11,20 +11,24 @@ class Alpha2(Alpha):
         self.alphas = {}
         for inst in self.insts:
             inst_df = self.dfs[inst]
+            # Alpha2: mean-reversion style signal from open-vs-close relationship.
             alpha = -1 * (1-(inst_df.open/inst_df.close)).rolling(12).mean()
             self.alphas[inst] = alpha
         return 
 
     def post_compute(self,trade_range):
+        temp = []
         for inst in self.insts:
             self.dfs[inst]['alpha'] = self.alphas[inst]
-            self.dfs[inst]['alpha'] = self.dfs[inst]['alpha'].ffill()
-            self.dfs[inst]['eligible'] = self.dfs[inst]['eligible']\
-            & (~pd.isna(self.dfs[inst]['alpha'])) 
+            temp.append(self.dfs[inst]["alpha"])
+        alphadf = pd.concat(temp, axis=1)
+        alphadf.columns = self.insts
+        alphadf = alphadf.ffill()
+        self.eligiblesdf = self.eligiblesdf & (~pd.isna(alphadf))
+        self.alphadf = alphadf
         return 
 
     def compute_signal_distribution(self, eligibles, date):
-        forecasts = {}
-        for inst in eligibles:
-            forecasts[inst] = self.dfs[inst].at[date, 'alpha'] #alpha_score can be pos or neg
-        return forecasts, np.sum(np.abs(list(forecasts.values()))) #forecast_chips
+        # Return full cross-section vector aligned to self.insts.
+        forecasts = self.alphadf.loc[date].values
+        return forecasts
