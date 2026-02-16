@@ -1,4 +1,4 @@
-# QT101: Vectorized Multi-Alpha Backtest
+# Vectorized Multi-Alpha Backtest
 
 This project builds and runs 3 equity alphas on S&P 500 data, then compares performance and runtime before vs after vectorization.
 
